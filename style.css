@@ -1,0 +1,19 @@
+.pagebody {
+    height: auto;
+    display: flex;
+    justify-content: center;
+    width: auto;
+    align-items: center;
+}
+
+.grid-generator {
+    margin: auto;
+    border: 1px black solid;
+    display: grid;
+    grid-template-columns: repeat(25, 25px);
+    grid-template-rows: repeat(25, 25px);
+}
+
+.grid-generator > * {
+    border: 1px black solid;
+}
