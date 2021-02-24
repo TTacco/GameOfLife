@@ -1,17 +1,21 @@
 .pagebody {
+    background-color: rgb(149, 213, 221);
     height: auto;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     width: auto;
     align-items: center;
+
 }
 
 .grid-generator {
     margin: auto;
+    background-color: aliceblue;
     border: 1px black solid;
     display: grid;
-    grid-template-columns: repeat(25, 25px);
-    grid-template-rows: repeat(25, 25px);
+    grid-template-columns: repeat(40, 25px);
+    grid-template-rows: repeat(40, 25px);
 }
 
 .grid-generator > * {
