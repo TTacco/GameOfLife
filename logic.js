@@ -1,3 +1,4 @@
+
 //TODO: make this configurable as well as the CSS
 var time = 0;
 var maxRows = 40;
@@ -20,40 +21,96 @@ function drawBoard(){
             cell.addEventListener("click", cellClicked);
             body.appendChild(cell);
 
-            //Add a special data- attribute for cell info like position and status
-            let cellProperties = {
-                cellElement: cell,
-                cellStyle: cell.style,
-                cellColumnPosition: col,
-                cellRowPosition: row,
-                cellAlive: false,
-            }
-
-            //Set a data attribute that will store a "id" to the element
-            //which will be used as a key for the cellData dictionary that contains
-            //every cell's property in the board (better than using a 2d array imo)
-            let cellKey = "row" + row + "col" + col;
-            cell.setAttribute('data-cellid', cellKey);
-            cellData[cellKey] = cellProperties;
+            cell.setAttribute('data-cellrowpos', row);
+            cell.setAttribute('data-cellcolpos', col);
+            cell.setAttribute('data-cellisalive', false);
+            cellArray[row][col] = cell;
         }
     }
 }
 
+var globalLivingCells = new Array();
+var localDeadCells = new Array();
+var setAliveQueue = new Array();
+
+//interval = setInterval(time, 500);
+function time(){
+    checkAllLivingCells();   
+}
+
+var flip = true;
+function checkAllLivingCells(){
+    localDeadCells = new Array();
+    setAliveQueue = new Array();
+
+    
+    //for each of these living cells, get nearby cells
+        //skip cell if it is living
+        //else, store in localDeadCells 
+
+    globalLivingCells.forEach(checkAdjacentDeadCells);
+
+    //Todo
+    //for each localDeadCells, remove all repetitions
+    localDeadCells = localDeadCells.filter((deadCell, index, self) =>
+        index === self.findIndex((cell) => (cell === deadCell
+    ))
+)
+    let randomColor = (flip)? "red" : "green";
+    localDeadCells.forEach(deadCell => {deadCell.style.backgroundColor = randomColor});
+    flip = !flip; 
+
+
+    //for each localDeadCells, check nearby cells
+        //if localDeadCells has >=3 living cells, place it in the "setalivequeue"
+
+
+    
+}
+
+//Checks a living cells adjacent cells
+var adjacentCoordinates = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+function checkAdjacentDeadCells(item){
+    let cellRowPos = item.dataset.cellrowpos;
+    let cellColPos = item.dataset.cellcolpos;
+    
+    adjacentCoordinates.forEach(coordinate => {    
+        let [rowOffset, columnOffset] = coordinate;  
+        
+        let deltaRowPos = parseInt(cellRowPos) + rowOffset;
+        let deltaColPos = parseInt(cellColPos) + columnOffset;
+
+        if( deltaColPos >= maxCols ||
+            deltaColPos <= 0 ||
+            deltaRowPos >= maxRows ||
+            deltaColPos <= 0 
+        ) return;
+
+        cell = cellArray[deltaRowPos][deltaColPos];
+        console.log(`Row ${deltaRowPos} Col ${deltaColPos} IsAlive? ${cell.dataset.cellisalive}`)
+
+        if(cell.dataset.cellisalive == "false") localDeadCells.push(cell);
+        });
+
+}
+
 function cellClicked(event){
     //event.target.style.backgroundColor = "yellow";
-    let cellID = event.target.dataset.cellid;
-    let cellProperties = cellData[cellID];
-    console.log(cellProperties);
+    let cellRowPos = event.target.dataset.cellrowpos;
+    let cellColPos = event.target.dataset.cellcolpos;
 
-    cellProperties["cellStyle"].backgroundColor = (cellProperties["cellAlive"])? "white" : "orange";
-    cellProperties["cellAlive"] = !cellProperties["cellAlive"];
+    let cell = cellArray[cellRowPos][cellColPos];
 
+    console.log(`Positions are row: ${cellRowPos} col: ${cellColPos}`);
+    cell.setAttribute('data-cellisalive', true)
+    cell.style.backgroundColor = "black";
+
+    globalLivingCells.push(cell);
+
+    checkAllLivingCells();  
 }
 
-//tick = setInterval(ticker, 100);
-function ticker(){
 
-}
-
+//Main Methods
 drawBoard();
 
