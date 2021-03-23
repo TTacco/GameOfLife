@@ -1,10 +1,114 @@
-
 //TODO: make this configurable as well as the CSS
 var time = 0;
 var maxRows = 40;
 var maxCols = 40;
 var cellArray = new Array(maxRows);
 var cellData = new Object(); 
+var gameSpeed = 1000;
+
+var setAliveQueue = []; //Queue of cells to be set to "alive" at the end of the iteration
+var setDeadQueue = []; //Ditto but to set for dead
+
+var globalLivingCells = new Set(); //All living cells in the current iteration
+var localDeadCellsSet = new Set(); //All the dead cells nearby living cells in the current iteration
+
+interval = setInterval(() => {
+    console.log("tick");
+    startIteration();   
+    }, 5000);
+
+function startIteration(){
+    setAliveQueue.splice(0, setAliveQueue.length); //clear the array queue
+    setDeadQueue.splice(0, setDeadQueue.length);
+    localDeadCellsSet.clear(); 
+
+    /*
+    RULE 1 - Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+    RULE 2 - Any live cell with two or three live neighbours lives on to the next generation.
+    RULE 3 - Any live cell with more than three live neighbours dies, as if by overpopulation.
+    */
+    //for each of these living cells, get nearby dead cells and perform rule 1-3
+
+    globalLivingCells.forEach(livingCell => {
+        let nearbyLiveCellCounter = 0
+        let adjacentCells = getAdjacentCells(livingCell)      
+        
+        adjacentCells.forEach(adjCell => {
+            if(adjCell.dataset.cellisalive == "true") nearbyLiveCellCounter++;
+            else if(!localDeadCellsSet.has(adjCell)) localDeadCellsSet.add(adjCell);
+        })
+
+        if(nearbyLiveCellCounter < 2 || nearbyLiveCellCounter > 3) setDeadQueue.push(livingCell); 
+    });
+
+
+    //RULE 4 - Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+    localDeadCellsSet.forEach(deadCell => {
+        let nearbyLiveCellCounter = 0;
+        let adjacentCells = getAdjacentCells(deadCell)  
+
+        adjacentCells.forEach(adjCell => {  
+            if(adjCell.dataset.cellisalive == "true") nearbyLiveCellCounter++;   
+        });
+
+        if(nearbyLiveCellCounter >= 3) setAliveQueue.push(deadCell);
+    });
+
+    setAliveQueue.forEach(cell => {
+        cell.setAttribute('data-cellisalive', true)
+        cell.style.backgroundColor = "black";
+        globalLivingCells.add(cell);
+    });
+
+    setDeadQueue.forEach(cell => {
+        cell.setAttribute('data-cellisalive', false)
+        cell.style.backgroundColor = "white";
+    });
+
+}
+
+//Retrieves all adjacent cells of a given cell
+var adjacentCoordinates = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+function getAdjacentCells(cell){
+    let cellRowPos = cell.dataset.cellrowpos;
+    let cellColPos = cell.dataset.cellcolpos;
+
+    let adjacentCells = [];  
+    
+    adjacentCoordinates.forEach(coordinate => {    
+        let [rowOffset, columnOffset] = coordinate;  
+        
+        let deltaRowPos = parseInt(cellRowPos) + rowOffset;
+        let deltaColPos = parseInt(cellColPos) + columnOffset;
+
+        if( deltaColPos >= maxCols ||
+            deltaColPos <= 0 ||
+            deltaRowPos >= maxRows ||
+            deltaColPos <= 0 
+        ) return;
+
+        adjCell = cellArray[deltaRowPos][deltaColPos];
+        //console.log(`Row ${deltaRowPos} Col ${deltaColPos} IsAlive? ${adjCell.dataset.cellisalive}`)
+
+       adjacentCells.push(adjCell);
+    });
+
+    return adjacentCells;
+}
+
+function cellClicked(event){
+    //event.target.style.backgroundColor = "yellow";
+    let cellRowPos = event.target.dataset.cellrowpos;
+    let cellColPos = event.target.dataset.cellcolpos;
+
+    let clickedCell = cellArray[cellRowPos][cellColPos];
+
+    //console.log(`Positions are row: ${cellRowPos} col: ${cellColPos}`);
+    clickedCell.setAttribute('data-cellisalive', true)
+    clickedCell.style.backgroundColor = "black";
+
+    globalLivingCells.add(clickedCell); 
+}
 
 function drawBoard(){
     var body = document.getElementById("gridCanvas");
@@ -28,89 +132,6 @@ function drawBoard(){
         }
     }
 }
-
-var globalLivingCells = new Array();
-var localDeadCells = new Array();
-var setAliveQueue = new Array();
-
-//interval = setInterval(time, 500);
-function time(){
-    checkAllLivingCells();   
-}
-
-var flip = true;
-function checkAllLivingCells(){
-    localDeadCells = new Array();
-    setAliveQueue = new Array();
-
-    
-    //for each of these living cells, get nearby cells
-        //skip cell if it is living
-        //else, store in localDeadCells 
-
-    globalLivingCells.forEach(checkAdjacentDeadCells);
-
-    //Todo
-    //for each localDeadCells, remove all repetitions
-    localDeadCells = localDeadCells.filter((deadCell, index, self) =>
-        index === self.findIndex((cell) => (cell === deadCell
-    ))
-)
-    let randomColor = (flip)? "red" : "green";
-    localDeadCells.forEach(deadCell => {deadCell.style.backgroundColor = randomColor});
-    flip = !flip; 
-
-
-    //for each localDeadCells, check nearby cells
-        //if localDeadCells has >=3 living cells, place it in the "setalivequeue"
-
-
-    
-}
-
-//Checks a living cells adjacent cells
-var adjacentCoordinates = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-function checkAdjacentDeadCells(item){
-    let cellRowPos = item.dataset.cellrowpos;
-    let cellColPos = item.dataset.cellcolpos;
-    
-    adjacentCoordinates.forEach(coordinate => {    
-        let [rowOffset, columnOffset] = coordinate;  
-        
-        let deltaRowPos = parseInt(cellRowPos) + rowOffset;
-        let deltaColPos = parseInt(cellColPos) + columnOffset;
-
-        if( deltaColPos >= maxCols ||
-            deltaColPos <= 0 ||
-            deltaRowPos >= maxRows ||
-            deltaColPos <= 0 
-        ) return;
-
-        cell = cellArray[deltaRowPos][deltaColPos];
-        console.log(`Row ${deltaRowPos} Col ${deltaColPos} IsAlive? ${cell.dataset.cellisalive}`)
-
-        if(cell.dataset.cellisalive == "false") localDeadCells.push(cell);
-        });
-
-}
-
-function cellClicked(event){
-    //event.target.style.backgroundColor = "yellow";
-    let cellRowPos = event.target.dataset.cellrowpos;
-    let cellColPos = event.target.dataset.cellcolpos;
-
-    let cell = cellArray[cellRowPos][cellColPos];
-
-    console.log(`Positions are row: ${cellRowPos} col: ${cellColPos}`);
-    cell.setAttribute('data-cellisalive', true)
-    cell.style.backgroundColor = "black";
-
-    globalLivingCells.push(cell);
-
-    checkAllLivingCells();  
-}
-
-
 //Main Methods
 drawBoard();
 
