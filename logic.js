@@ -4,7 +4,7 @@ var maxRows = 40;
 var maxCols = 40;
 var cellArray = new Array(maxRows);
 var cellData = new Object(); 
-var gameSpeed = 1000;
+var gameSpeed = 1500;
 
 var setAliveQueue = []; //Queue of cells to be set to "alive" at the end of the iteration
 var setDeadQueue = []; //Ditto but to set for dead
@@ -12,10 +12,9 @@ var setDeadQueue = []; //Ditto but to set for dead
 var globalLivingCells = new Set(); //All living cells in the current iteration
 var localDeadCellsSet = new Set(); //All the dead cells nearby living cells in the current iteration
 
-interval = setInterval(() => {
-    console.log("tick");
-    startIteration();   
-    }, 5000);
+function changeGameSpeed(newGameSpeed){
+    gameSpeed = newGameSpeed;
+}
 
 function startIteration(){
     setAliveQueue.splice(0, setAliveQueue.length); //clear the array queue
@@ -65,6 +64,7 @@ function startIteration(){
         cell.style.backgroundColor = "white";
     });
 
+    setTimeout(startIteration, gameSpeed); 
 }
 
 //Retrieves all adjacent cells of a given cell
@@ -84,12 +84,12 @@ function getAdjacentCells(cell){
         if( deltaColPos >= maxCols ||
             deltaColPos <= 0 ||
             deltaRowPos >= maxRows ||
-            deltaColPos <= 0 
+            deltaRowPos <= 0 
         ) return;
 
         adjCell = cellArray[deltaRowPos][deltaColPos];
         //console.log(`Row ${deltaRowPos} Col ${deltaColPos} IsAlive? ${adjCell.dataset.cellisalive}`)
-
+        
        adjacentCells.push(adjCell);
     });
 
@@ -131,7 +131,10 @@ function drawBoard(){
             cellArray[row][col] = cell;
         }
     }
+
+    setTimeout(startIteration, gameSpeed)
 }
+
 //Main Methods
 drawBoard();
 
